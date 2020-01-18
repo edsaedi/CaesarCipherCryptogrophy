@@ -5,6 +5,8 @@
 #include <vector>
 #include <iterator>
 #include <fstream>
+#include <filesystem>
+#include <map>
 
 std::string Encrypt(std::string string, int key)
 {
@@ -76,46 +78,71 @@ std::vector<std::string> SplitString(std::string input, char split)
 	return words;
 }
 
-
-std::string SmartCracker(std::string string)
-{
-	auto words = SplitString(string, ' ');
-	std::string word;
-	int key = -1;
-	for (size_t i = 0; i < words.size(); i++)
-	{
-		std::string temp = words[i];
-		if (temp.size() < key)
-		{
-			key = temp.size();
-			word = temp;
-		}
-	}
-
-	std::string dict = DictionaryCheck(word);
-	return word;
-}
-
 std::string DictionaryCheck(std::string word)
 {
 	auto perms = BruteDecrypt(word);
 	std::string line;
+	/*auto currDir = std::filesystem::current_path();
+	std::cout << currDir << std::endl;*/
 	std::ifstream myfile("Dictionary.txt");
+	std::map<std::string, int> map;
+	int a{};
+	while (std::getline(myfile, line))
+	{
+		map.insert(std::pair<std::string, int>(line, a));
+		a++;
+	}
+
 	if (myfile.is_open())
 	{
 		for (size_t i = 0; i < perms.size(); i++)
 		{
-			for (size_t j = 0; std::getline(myfile, line); j++)
+			if (i == 5)
+			{
+				std::cout << "5";
+			}
+
+			for (size_t j = 0; j < map.size(); j++)
+			{
+				if (map.contains(perms[j]))
+				{
+					return perms[j];
+				}
+			}
+			int z = {};
+			while (std::getline(myfile, line))
 			{
 				if (perms[i] == line)
 				{
 					return line;
 				}
+				z++;
 			}
+
 
 		}
 	}
+	return "";
 }
+
+std::string SmartCracker(std::string string)
+{
+	auto words = SplitString(string, ' ');
+	std::string word;
+	size_t key = 0;
+	for (size_t i = 0; i < words.size(); i++)
+	{
+		if (words[i].size() > key)
+		{
+			key = words[i].size();
+			word = words[i];
+		}
+	}
+
+	return DictionaryCheck(word);
+}
+
+
 
 void LowerCase(std::string string)
 {
@@ -125,6 +152,7 @@ void LowerCase(std::string string)
 
 int main()
 {
+
 	/*std::cout << "Put in a string to encrypt:";
 	std::string text;
 	std::getline(std::cin, text);
