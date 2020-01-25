@@ -6,7 +6,14 @@
 #include <iterator>
 #include <fstream>
 #include <filesystem>
-#include <map>
+#include <array>
+#include <unordered_set>
+
+enum class Languages {
+	English,
+	Spanish,
+	French
+};
 
 std::string Encrypt(std::string string, int key)
 {
@@ -78,73 +85,106 @@ std::vector<std::string> SplitString(std::string input, char split)
 	return words;
 }
 
-std::string DictionaryCheck(std::string word)
+std::string DictionaryCheck(std::string text, Languages language)
 {
-	auto perms = BruteDecrypt(word);
-	std::string line;
 	/*auto currDir = std::filesystem::current_path();
 	std::cout << currDir << std::endl;*/
-	std::ifstream myfile("Dictionary.txt");
-	std::map<std::string, int> map;
-	int a{};
-	while (std::getline(myfile, line))
+
+	std::ifstream myfile;
+	if (language == Languages::English)
 	{
-		map.insert(std::pair<std::string, int>(line, a));
-		a++;
+		myfile = std::ifstream("Dictionary.txt");
 	}
+	else if (language == Languages::French)
+	{
+		myfile = std::ifstream("francais.txt");
+	}
+	else
+	{
+		myfile = std::ifstream("espanol.txt");
+	}
+	std::string line;
+	std::unordered_set<std::string> wordsDictionary;
 
 	if (myfile.is_open())
 	{
-		for (size_t i = 0; i < perms.size(); i++)
+		while (std::getline(myfile, line))
 		{
-			if (i == 5)
-			{
-				std::cout << "5";
-			}
-
-			for (size_t j = 0; j < map.size(); j++)
-			{
-				if (map.contains(perms[j]))
-				{
-					return perms[j];
-				}
-			}
-			int z = {};
-			while (std::getline(myfile, line))
-			{
-				if (perms[i] == line)
-				{
-					return line;
-				}
-				z++;
-			}
-
-
+			wordsDictionary.insert(line);
 		}
+	}
+
+	auto perms = BruteDecrypt(text);
+	for (size_t i = 0; i < perms.size(); i++)
+	{
+		auto words = SplitString(perms[i], ' ');
+		for (size_t j = 0; j < words.size(); j++)
+		{
+			if (words[j].size() >= 4)
+			{
+				if (wordsDictionary.find(words[j]) != wordsDictionary.end())
+				{
+					return perms[i];
+				}
+			}
+		}
+	}
+
+	return "";
+	//auto textWord = SplitString(text, ' ');
+
+
+	//for (size_t n = 0; n < textWord.size(); n++)
+	//{
+	//	auto perms = BruteDecrypt(textWord[n]);
+	//	for (size_t i = 0; i < perms.size(); i++)
+	//	{
+	//		for (size_t j = 0; j < words.size(); j++)
+	//		{
+	//			if (words.find(perms[i]) != words.end())
+	//				//if (std::find(words.begin(), words.end(), word) != words.end())
+	//			{
+	//				return perms[i];
+	//			}
+	//		}
+	//		/*int z = {};
+	//		while (std::getline(myfile, line))
+	//		{
+	//			if (perms[i] == line)
+	//			{
+	//				return line;
+	//			}
+	//			z++;
+	//		}*/
+	//	}
+	//}
+}
+
+std::string DictionaryLanguageCheck(std::string text)
+{
+	std::string eng = DictionaryCheck(text, Languages::English);
+	std::string sp = DictionaryCheck(text, Languages::Spanish);
+	std::string fr = DictionaryCheck(text, Languages::French);
+	if (eng != "")
+	{
+		std::cout << "English \n";
+		return eng;
+	}
+	else if (sp != "")
+	{
+		std::cout << "Spanish \n";
+		return sp;
+	}
+
+	else if (fr != "")
+	{
+		std::cout << "French \n";
+		return fr;
 	}
 	return "";
 }
 
-std::string SmartCracker(std::string string)
-{
-	auto words = SplitString(string, ' ');
-	std::string word;
-	size_t key = 0;
-	for (size_t i = 0; i < words.size(); i++)
-	{
-		if (words[i].size() > key)
-		{
-			key = words[i].size();
-			word = words[i];
-		}
-	}
-
-	return DictionaryCheck(word);
-}
-
-
-
-void LowerCase(std::string string)
+void LowerCase(std::string& string)
 {
 	std::transform(string.begin(), string.end(), string.begin(),
 		[](unsigned char c) { return std::tolower(c); });
@@ -185,5 +225,6 @@ int main()
 
 	std::string text;
 	std::getline(std::cin, text);
-	std::cout << SmartCracker(text);
+	LowerCase(text);
+	std::cout << DictionaryLanguageCheck(text);
 }
